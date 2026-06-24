@@ -1,51 +1,39 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+name: Build Project
 
 on:
-  # Runs on pushes targeting the default branch
   push:
-    branches: ['main']
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# Sets the GITHUB_TOKEN permissions to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Allow one concurrent deployment
-concurrency:
-  group: 'pages'
-  cancel-in-progress: true
+    branches:
+      - main # Apnar default branch jodi 'master' hoy, tahole ekhane 'master' likhben
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  # Single deploy job since we're just deploying
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-      - name: Set up Node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      # 1. Checkout the repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Install pnpm (Matching your package.json version)
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
         with:
-          node-version: lts/*
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
-      - name: Build
-        run: npm run build
-      - name: Setup Pages
-        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+          version: 10
+
+      # 3. Set up Node.js with pnpm cache enabled
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          # Upload dist folder
-          path: './dist'
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5
+          node-version: '24' 
+          cache: 'pnpm'
+
+      # 4. Install dependencies using pnpm
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 5. Run the build script
+      - name: Build Project
+        run: pnpm run build
