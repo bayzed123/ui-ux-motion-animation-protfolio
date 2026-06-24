@@ -4,7 +4,7 @@ pages:
   cache:
     key:
       files:
-        - package-lock.json
+        - package.json
       prefix: npm
     paths:
       - node_modules/
