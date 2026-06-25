@@ -5,10 +5,10 @@
     "watchPatterns": [
       "/client/**"
     ],
-    "buildEnvironment": "V3"
+    "buildEnvironment": "product"
   },
   "deploy": {
-    "runtime": "V2",
+    "runtime": "product",
     "numReplicas": 1,
     "sleepApplication": false,
     "useLegacyStacker": false,
