@@ -103,7 +103,7 @@ jobs:
 
   # Stage 4: Build Frontend
   build-frontend:
-    name: Build Frontend
+    name: Build Frontend (Vite)
     runs-on: ubuntu-latest
     needs: [type-check, code-quality]
     steps:
@@ -125,17 +125,61 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build frontend
+      - name: Build frontend with Vite
         run: pnpm build
+        env:
+          NODE_ENV: production
+          VITE_BUILD_TARGET: es2020
 
-      - name: Check dist output
+      - name: Verify build artifacts
         run: |
+          echo "🔍 Checking build output..."
+          
           if [ ! -d "dist" ]; then
             echo "❌ Build failed: dist directory not created"
             exit 1
           fi
-          echo "✅ Build successful"
-          du -sh dist/
+          
+          if [ ! -d "dist/public" ]; then
+            echo "⚠️ Warning: dist/public not found, checking dist contents..."
+          fi
+          
+          # Count files
+          FILE_COUNT=$(find dist -type f | wc -l)
+          echo "✅ Build successful - $FILE_COUNT files generated"
+          
+          # Show size
+          TOTAL_SIZE=$(du -sh dist | cut -f1)
+          echo "📦 Total size: $TOTAL_SIZE"
+          
+          # List main output
+          echo "📂 Build structure:"
+          find dist -maxdepth 2 -type f -name "*.js" -o -name "*.css" | head -10
+          
+          # Check for source maps (dev)
+          SOURCEMAPS=$(find dist -name "*.map" | wc -l)
+          if [ $SOURCEMAPS -gt 0 ]; then
+            echo "📍 Found $SOURCEMAPS source maps (consider removing for production)"
+          fi
+
+      - name: Analyze bundle
+        run: |
+          echo "## 📊 Build Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Bundle Metrics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -d "dist/public" ]; then
+            du -sh dist/public >> $GITHUB_STEP_SUMMARY
+          else
+            du -sh dist >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### File Count" >> $GITHUB_STEP_SUMMARY
+          echo "- Total files: $(find dist -type f | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "- JavaScript files: $(find dist -name '*.js' | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "- CSS files: $(find dist -name '*.css' | wc -l)" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -143,6 +187,7 @@ jobs:
           name: frontend-build
           path: dist/
           retention-days: 5
+          compression-level: 6
 
   # Stage 5: Security Scanning
   security:
