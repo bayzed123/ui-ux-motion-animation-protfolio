@@ -1,61 +1,39 @@
-name: Deploy Portfolio to GitHub Pages
+name: Build Project
 
 on:
   push:
     branches:
+      - main # Apnar default branch jodi 'master' hoy, tahole ekhane 'master' likhben
+  pull_request:
+    branches:
       - main
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout the repository code
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # 2. Install pnpm (Matching your package.json version)
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      # 3. Set up Node.js with pnpm cache enabled
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: pnpm
+          node-version: '24' 
+          cache: 'pnpm'
 
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v4
-
+      # 4. Install dependencies using pnpm
       - name: Install Dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
+      # 5. Run the build script
       - name: Build Project
-        run: pnpm build
-
-      - name: Upload GitHub Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist/public
-
-  deploy:
-    needs: build
-
-    permissions:
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        run: pnpm run build
