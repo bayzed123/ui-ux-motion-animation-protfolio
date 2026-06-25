@@ -1,0 +1,57 @@
+name: Build & Verify
+
+on:
+push:
+branches:
+- main
+- develop
+
+pull_request:
+branches:
+- main
+- develop
+
+workflow_dispatch:
+
+env:
+NODE_VERSION: 20
+PNPM_VERSION: 10.4.1
+
+jobs:
+build:
+runs-on: ubuntu-latest
+
+permissions:
+  contents: read
+steps:
+  - name: Checkout Repository
+    uses: actions/checkout@v4
+  - name: Setup PNPM
+    uses: pnpm/action-setup@v4
+    with:
+      version: ${{ env.PNPM_VERSION }}
+  - name: Setup Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: ${{ env.NODE_VERSION }}
+      cache: pnpm
+  - name: Install Dependencies
+    run: pnpm install --frozen-lockfile
+  - name: Type Check
+    run: pnpm check
+  - name: Build Application
+    run: pnpm build
+  - name: Verify Build Output
+    run: |
+      ls -la
+      ls -la dist || true
+  - name: Upload Build Artifact
+    uses: actions/upload-artifact@v4
+    with:
+      name: production-build
+      path: |
+        dist
+        client/dist
+      if-no-files-found: ignore
+  - name: Success
+    run: echo "Build completed successfully 🚀"
